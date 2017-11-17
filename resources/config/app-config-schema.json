@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$id": "app-config-schema.json",
+    "self": {
+        "vendor": "unical",
+        "name": "app-config",
+        "format": "jsonschema",
+        "version": "1-0-0"
+    },
+    "type": "object",
+    "properties": {
+        "port": {
+            "title": "Connection port of the LoIDE Web Application.",
+            "description": "This property specifies the port to use for the LoIDE Web Application.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 65535
+        }
+    },
+    "required": [
+        "port"
+    ],
+    "additionalProperties": false
+}

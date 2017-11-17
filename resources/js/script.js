@@ -1,6 +1,6 @@
 (function ($) {
 
-    /** 
+    /**
      *  @description Serialize form as json object
      */
     $.fn.serializeFormJSON = function () {
@@ -76,8 +76,8 @@
 })(jQuery);
 
 /**
- * @param {json} result - description of the problem 
- * @description Open a container to display the result 
+ * @param {json} result - description of the problem
+ * @description Open a container to display the result
  */
 function operation_alert(result) {
     $("#result-auto-close-alert").focus();
@@ -90,7 +90,7 @@ function operation_alert(result) {
 
 /**
  * @global
- * @description place the id of the current shown editor 
+ * @description place the id of the current shown editor
  */
 var idEditor = 'editor1';
 /**
@@ -154,10 +154,11 @@ $(window).resize(function () {
 });
 
 $(document).ready(function () {
-
     inizializeShortcuts();
 
-    restoreOptions();
+    // Restores the saved settings from the local storage (if supported)
+    // TODO: the restoring process is incomplete
+    restoreOptionsFromLocalStorage();
 
     $('#font-output').change(function (e) {
         var size = $(this).val();
@@ -202,6 +203,7 @@ $(document).ready(function () {
         $(this).tooltip('hide');
     });
 
+    // TODO: its possible to substitute the ajax with the socket
     $('[data-target="#modal-about"]').on('click', function () {
         $.ajax({
             type: "POST",
@@ -232,7 +234,6 @@ $(document).ready(function () {
             }
         },
         south__minSize: 125
-
     });
 
     if (window.innerWidth > 450) {
@@ -256,7 +257,7 @@ $(document).ready(function () {
             addProgramsToDownload();
             form = $('#input').serializeFormJSON();
             stringify = JSON.stringify(form);
-            chose = $('#choice').text(); // returns the value of what to download and place the value of the text editor into a 'text' variable 
+            chose = $('#choice').text(); // returns the value of what to download and place the value of the text editor into a 'text' variable
             createFileToDownload(stringify);
             destroyPrograms();
         } else {
@@ -276,15 +277,13 @@ $(document).ready(function () {
 
     /**
      * @global
-     * @description id of the clicked button 'submit'  
+     * @description id of the clicked button 'submit'
      */
     var clkBtn = "";
 
     $('button[type="submit"]').click(function (evt) {
         clkBtn = evt.target.id;
-
     });
-
 
     $('#input').submit(function (e) {
         e.preventDefault();
@@ -311,7 +310,7 @@ $(document).ready(function () {
             $("#run-dot").attr("name", "runAuto");
             form = $('#input').serializeFormJSON();
             stringify = JSON.stringify(form);
-            var chose = $('#choice').text(); // returns the value of what to download and place the value of the text editor into a 'text' variable 
+            var chose = $('#choice').text(); // returns the value of what to download and place the value of the text editor into a 'text' variable
             createFileToDownload(stringify);
             $('#output-form').removeAttr('name');
             destroyPrograms();
@@ -339,41 +338,35 @@ $(document).ready(function () {
             });
             $("#run-dot").removeAttr("name");
         }
-
     });
 
     $("#btn-option").click(function () {
-
         $('.left-panel').toggleClass('left-panel-show'); // add class 'left-panel-show' to increase the width of the left panel
-
         $('.option-solver > div').toggleClass("hidden show"); // add class to show option components
-
     });
-
 });
 
 /**
  * @description Serialize form and send it to socket server and waits for the response
  */
 function callSocketServer() {
-    configureOptions();
     if (!addMorePrograms()) {
         var text = editors[idEditor].getValue();
         $('#program').val(text); // insert the content of text editor in a hidden input text to serailize
     }
     var form = $('#input').serializeFormJSON();
     destroyPrograms();
-    destroyOptions();
+
     var socket = io.connect();
     socket.emit('run', JSON.stringify(form));
     socket.on('problem', function (response) {
         operation_alert(response);
-        console.log(response); // debug string 
+        console.log(response); // debug string
     });
     socket.on('output', function (response) {
         if (response.error === "") {
             console.log(response.model); // debug string
-            $('#output').text(response.model); // append the response in the container 
+            $('#output').text(response.model); // append the response in the container
             $('#output').css('color', 'black');
         } else {
             $('#output').text(response.error);
@@ -396,7 +389,6 @@ function intervalRun() {
 
 function createFileToDownload(text) {
     var textFileAsBlob = new Blob([text], {
-
         type: 'application/json'
     });
     /**
@@ -426,7 +418,7 @@ function createFileToDownload(text) {
 }
 /**
  * @param {Object} event - reference to the object that dispatched the event
- * @description Remove the link from the DOM 
+ * @description Remove the link from the DOM
  */
 function destroyClickedElement(event) {
     document.body.removeChild(event.target);
@@ -438,7 +430,9 @@ $(document).on('click', '.btn-add-option', function () {
 });
 
 $(document).on('click', '.btn-del-option', function () {
-    $(this).parent().parent().parent().parent().prev().find(".btn-add-option").append('<button type="button" class="btn btn-default">+</button>');
+    if($(this).parent().parent().parent().parent().is('.row-option:last')) {
+        $(this).parent().parent().parent().parent().prev().find(".btn-add-option").append('<button type="button" class="btn btn-default">+</button>');
+    }
     delOptionDOM($(this));
 });
 
@@ -450,7 +444,7 @@ $(document).on('click', '.btn-del-value', function () {
 });
 
 $(document).on('click', '.btn-add', function () {
-    addInpuValue($(this));
+    addInputValue($(this));
     $(this).parent().empty();
 });
 
@@ -511,35 +505,81 @@ $(document).on('click', '#split-up', function () {
     $('#output').text(currentVal);
 });
 
-$(document).on('change', '#inputengine', function () {
+// TODO BUG: on change check if the languages loaded are still supported by the executor
+// Sets the solvers and options on language change
+$(document).on('change', '#inputLanguage', function (event, languageChanged) {
     var val = $(this).val();
-    if (val === "clingo") {
-        $('.form-control-option').each(function (index, element) {
-            $(this).find("option").each(function (index, element) {
-                if ($(this).val() !== "free choice" && $(this).val() !== "")
-                    $(this).remove();
-            });
-            if ($(this).val() !== 'free choice')
-                $(this).val("").change();
+    if(val !== '') {
+        var socket = io.connect();
+        socket.emit('changeLanguage', val);
+        socket.on('changeLanguageRes', function (data) {
+            $('#inputSolver').empty();
+            $('.form-control-option').empty();
+            for (var index = 0; index < data.length; index++) {
+                var element = data[index];
+                $('<option>').val(element.value).text(element.name).appendTo('#inputSolver');
+            }
+            $('#inputSolver').change();
+            // Used during option loading from file or local storage
+            if(languageChanged)
+                languageChanged(true);
         });
-
-    } else {
-        $('.form-control-option').append('</option><option value="filter">Filter</option><option value="nofacts">Nofacts</option><option value="silent">Silent</option><option value="query">Query</option>');
+        socket.on('changeLanguageError', function () {
+            $('#inputSolver').empty();
+            $('.form-control-option').empty();
+            // Used during option loading from file or local storage
+            if(languageChanged)
+                languageChanged(false);
+            alert('The selected language doesn\'t exist!');
+        });
     }
 });
 
-$(document).on('change', '.form-control-option', function () { //add or remove the 'input type value' based on the option
+// Sets the options on solver change
+$(document).on('change', '#inputSolver', function (event, solverChange) {
     var val = $(this).val();
-    if (val === 'free choice' || val === 'filter') {
+    if(val !== '') {
+        var obj = {};
+        obj["language"] = $('#inputLanguage').val();
+        obj["solver"] = $('#inputSolver').val();
+        var socket = io.connect();
+        socket.emit('changeSolver', obj);
+        socket.on('changeSolverRes', function (data) {
+            $('.form-control-option').empty();
+            for (var index = 0; index < data.length; index++) {
+                var element = data[index];
+                $('<option>').val(element.value).text(element.name)
+                    .attr("word_argument", element["word_argument"])
+                    .attr("title", element.descption).appendTo('.form-control-option');
+            }
+            $('.form-control-option').change();
+            // Used during option loading from file or local storage
+            if(solverChange)
+                solverChange(true);
+        });
+        socket.on('changeSolverError', function () {
+            $('.form-control-option').empty();
+            // Used during option loading from file or local storage
+            if(solverChange)
+                solverChange(true);
+            alert('The selected solver doesn\'t exist!');
+        });
+    }
+});
+
+// Add or remove the 'input type value' based on the option
+$(document).on('change', '.form-control-option', function () {
+    var val = $(this).val();
+    if ($(this).find("[value='" + val + "']").attr('word_argument') === 'true') {
         if (($(this).closest('.row-option').find('.option-value').find('.input-group-value').length) <= 0)
-            addInpuValue($(this).closest('.row-option'));
+            addInputValue($(this).closest('.row-option'));
     } else {
         $(this).closest('.row-option').find('.option-value').remove();
         $(this).closest('.col-sm-12').append("<div class='option-value'></div>");
     }
-
 });
-$(document).on('click', '.add-tab', function () { // add new tab 
+
+$(document).on('click', '.add-tab', function () { // add new tab
     var tabID = addTab($(this), "");
     $("[data-target='#" + tabID + "']").trigger('click'); //active last tab inserted
 });
@@ -598,10 +638,10 @@ $(document).on('click', '.delete-tab', function () { // delete tab
 });
 
 /**
- * 
+ *
  * @param {string} searchStr - string to search
  * @param {string} str - text where search the string
- * @param {boolean} caseSensitive 
+ * @param {boolean} caseSensitive
  * @returns {array}
  * @description Returns each position of the searched string
  */
@@ -621,9 +661,9 @@ function getIndicesOf(searchStr, str, caseSensitive) {
 }
 
 /**
- * 
- * @param {*} element - container  where to search 
- * @description Returns the start and the end position of the selected string in the output container 
+ *
+ * @param {*} element - container  where to search
+ * @description Returns the start and the end position of the selected string in the output container
  */
 function getSelectionCharOffsetsWithin(element) {
     var start = 0,
@@ -652,7 +692,7 @@ function getSelectionCharOffsetsWithin(element) {
 }
 
 /**
- * @param optionClassBtn - class of the clicked button to find the closest row 
+ * @param optionClassBtn - class of the clicked button to find the closest row
  * @description Delete from the DOM an option block and iterates all of the form options to change their 'name' for a correct json format (if present, included input value)
  */
 function delOptionDOM(optionClassBtn) {
@@ -664,13 +704,12 @@ function delOptionDOM(optionClassBtn) {
 
         $(this).closest('.row-option').find('.form-control-value').each(function (index2) {
             $(this).attr('name', 'option[' + index + '][value][]');
-
         });
     });
 }
 
 /**
- * @param optionClassBtn - class of the clicked button to find the closest row 
+ * @param optionClassBtn - class of the clicked button to find the closest row
  * @description Clone the closest row with the option select to add it to the DOM and change 'name' with the correct value for json format
  */
 function addOptionDOM(optionClassBtn) {
@@ -681,7 +720,6 @@ function addOptionDOM(optionClassBtn) {
     var cloneOpname = $(clone).find('.opname');
     if (lenghtClass > 0) {
         $(cloneOpname).find('.btn-del-option').remove();
-
         $(cloneOpname).prepend('<span class="input-group-btn btn-del-option"><button type="button" class="btn btn-danger">-</button></span>'); //append button delete after first option block
     }
     lenghtClass -= 1;
@@ -690,12 +728,11 @@ function addOptionDOM(optionClassBtn) {
 
     $(inputValueClone).remove(); // remove all input value forms
 
-    clone.find($('.center-btn-value')).remove(); // remove button to add input value, if present 
-    if ($(clone).find('.form-control-option').val() === 'free choice') {
-        addInpuValue($(clone).find('.form-control-option').closest('.row-option'));
+    clone.find($('.center-btn-value')).remove(); // remove button to add input value, if present
+    if ($(clone).find('.form-control-option option:selected').attr('word_argument') === 'true') {
+        addInputValue($(clone).find('.form-control-option').closest('.row-option'));
     }
     clone.find('label').empty();
-
 }
 
 /**
@@ -716,7 +753,7 @@ function deleteInputValue(inputClass) {
  * @param inputClass - class of the clicked button to find the closest row
  * @description Add the input type to a correct class parent
  */
-function addInpuValue(inputClass) {
+function addInputValue(inputClass) {
     var optionValue = $(inputClass).find('.option-value');
     if (optionValue.size() === 0)
         optionValue = $(inputClass).closest('.option-value');
@@ -724,7 +761,7 @@ function addInpuValue(inputClass) {
 
     /**
      * replace 'name' in 'value' for correct json format
-     * @example currentName=option[0][name] , replaceName=option[0][value][] 
+     * @example currentName=option[0][name] , replaceName=option[0][value][]
      */
     var replaceName = currentName.replace('name', 'value');
     replaceName += '[]';
@@ -739,77 +776,12 @@ function addInpuValue(inputClass) {
 }
 
 /**
- * @class
- * @classdesc Creates dlv's options
- */
-function OptionDLV() {
-    /**
-     * bidirectional map
-     * @type {Object}
-     * @memberof OptionDLV#
-     */
-    this.map = new BiMap();
-
-    /**
-     * Add into the object map the value of dlv's options
-     * @memberof OptionDLV#
-     */
-    this.init = function () {
-        this.map.push("filter", "-filter=");
-        this.map.push("nofacts", "-nofacts");
-        this.map.push("silent", "-silent");
-        this.map.push("query", "-FC");
-    };
-
-}
-
-/**
- * @description Based on the value 'engine', it creates a hidden option temporary with the corresponding value of the option name to set the value of the select option
- */
-function configureOptions() {
-    var engine = $('#inputengine').val();
-    switch (engine) {
-        case 'dlv':
-            var optionDLV = new OptionDLV();
-            optionDLV.init();
-            $('.form-control-option').each(function (indexInArray) {
-                var currentVal = $(this).val();
-                if (currentVal !== "free choice" && currentVal.length !== 0) {
-                    var val = optionDLV.map.key(currentVal);
-                    $(this).append('<option value="' + val + '"></option>');
-                    $(this).val(val);
-                }
-            });
-            break;
-
-        default:
-            break;
-    }
-}
-
-/**
- * @description Destroy the temporary options and set the select option to the original value
- */
-function destroyOptions() {
-    var optionDLV = new OptionDLV();
-    optionDLV.init();
-    $('.form-control-option').each(function (indexInArray) {
-        var currentVal = $(this).val();
-        if (currentVal !== "free choice" && currentVal.length !== 0) {
-            var val = optionDLV.map.val(currentVal);
-            $(this).val(val).change();
-            $(this).find('option[value="' + currentVal + '"]').remove();
-        }
-    });
-}
-
-/**
  * @param {Object} text - configuration in json format
- * @returns {boolean} 
- * @description check if the configration file has the correct property to set. If not, return false and display the content of the file in the text editor   
+ * @returns {boolean}
+ * @description check if the configration file has the correct property to set. If not, return false and display the content of the file in the text editor
  */
 function setJSONInput(config) {
-    if (config.hasOwnProperty('language') || config.hasOwnProperty('engine') || config.hasOwnProperty('option') || config.hasOwnProperty('program') || config.hasOwnProperty('output')) {
+    if (config.hasOwnProperty('language') || config.hasOwnProperty('solver') || config.hasOwnProperty('option') || config.hasOwnProperty('program') || config.hasOwnProperty('output')) {
         $('.nav-tabs li:not(:last)').each(function (index, element) {
             var id = $(this).find("a").attr("data-target");
             $(this).remove();
@@ -829,10 +801,9 @@ function setJSONInput(config) {
         if (config.hasOwnProperty('runAuto')) {
             $("#run-dot").prop('checked', true);
         }
-        $('#inputLanguage').val(config.language).change();
-        $('#inputengine').val(config.engine).change();
+        // TODO DEBUG: changed like loading from local storage. Not debugged yet.
+        restoreOptions(config);
         $('#output').text(config.output);
-        setOptions(config);
         return true;
     } else {
         return false;
@@ -840,16 +811,18 @@ function setJSONInput(config) {
 }
 
 /**
+ * @param {Object} optionTemplate - JQuery object
  * @param {number} index - Item number Created
  * @param {string} valueOption - option's value
- * @description creates a option's form and append it to the DOM with the corresponding value
+ * @description Append the option's form, passed in input like a template, to the DOM with the corresponding value
  */
-function addOption(index, valueOption) {
-    var clone = '<div class="row row-option"><div class="col-sm-12"><div class="form-group"><label for="option" class="col-sm-12 text-center">Options</label><div class="input-group opname"><select id="op' + index + '" name="option[' + index + '][name]" class="form-control form-control-option"><option value=""></option><option value="free choice">Free choice</option><option value="filter">Filter</option><option value="nofacts">Nofacts</option><option value="silent">Silent</option><option value="query">Query</option></select><span class="input-group-btn btn-add-option"><button type="button" class="btn btn-default">+</button></span></div></div><div class="option-value"></div></div></div>';
+function addOption(optionTemplate, index, valueOption) {
+    var clone = $(optionTemplate).clone();
+    $(clone).find('select').attr('id', 'op' + index);
+    $(clone).find('select').attr('name', 'option[' + index + '][name]');
     $(clone).insertBefore('.checkbox');
     var id = "#op" + index;
     $(id).val(valueOption).change();
-
 }
 
 /**
@@ -877,13 +850,12 @@ function setHeightComponents(expanded) {
         $('.ui-layout-pane-east').css('height', height - navbarHeight);
         $('.ui-layout-pane-center').css('height', height - navbarHeight);
     }
-
     editors[idEditor].resize();
 }
 
 /**
  * @param {string} str - string to check
- * @returns {boolean} 
+ * @returns {boolean}
  * @description check if a string is JSON
  */
 function isJosn(str) {
@@ -894,6 +866,7 @@ function isJosn(str) {
     }
     return true;
 }
+
 /**
  * @param {string} layout - specific layout
  * @description append textarea to a specific layout
@@ -902,7 +875,6 @@ function createTextArea(layout) {
     $("#setting-output").remove();
     $("#output").remove();
     $(layout).append('<div id="setting-output"> Output <a role="button" class="pull-right" data-toggle="modal" href="#setting-editor"><i class="fa fa-cog"></i></a> <a role="button" id="split" class="pull-right"><i class="glyphicon glyphicon-menu-down"></i></a></div><div id="output" class="output"></div>');
-
 }
 
 function handleFileSelect(evt) {
@@ -920,7 +892,6 @@ function handleFileSelect(evt) {
             if (!setJSONInput(jsontext)) {
                 editors[idEditor].setValue(JSON.stringify(text)); // set value of the file in text editor
             }
-
         } else {
             editors[idEditor].setValue(text);
         }
@@ -943,7 +914,7 @@ function handleDragOver(evt) {
 /**
  * @param {string} ideditor - current id editor
  * @param {string} text - value of the text editor
- * @description set up current editor 
+ * @description set up current editor
  */
 function setUpAce(ideditor, text) {
     editors[ideditor] = new ace.edit(ideditor);
@@ -1010,12 +981,11 @@ function inizializeShortcuts() {
         $('#btn-upload').attr('data-original-title', '{ ctrl + u }');
         $('[for="btn-download"]').attr('data-original-title', '{ ctrl + d }');
     }
-
 }
 
 /**
  * @returns {boolean}
- * @description add the programs into the input type hidden to serialize 
+ * @description add the programs into the input type hidden to serialize
  */
 function addMorePrograms() {
     var check = false;
@@ -1032,7 +1002,6 @@ function addMorePrograms() {
         $('#program').remove();
     }
     return check;
-
 }
 
 /**
@@ -1046,6 +1015,7 @@ function addProgramsToDownload() {
         $('.layout').prepend("<input type='hidden' name='program[" + index + "]' id='program" + index + "' value='" + value + "' class='programs'>");
     });
 }
+
 /**
  * @description destroy all the input type created and insert the default input type
  */
@@ -1054,12 +1024,11 @@ function destroyPrograms() {
         $(this).remove();
     });
     $('.layout').prepend('<input type="hidden" name="program[0]" id="program" class="programs" value="">');
-
 }
 
 /**
  * @returns {string}
- *@description generate unique id for the tabs 
+ *@description generate unique id for the tabs
  */
 function generateIDTab() {
     var id = $(".nav-tabs").children().length;
@@ -1125,7 +1094,7 @@ function saveOption(key, value) {
 /**
  * @description Sets the saved options in the localStorage
  */
-function restoreOptions() {
+function restoreOptionsFromLocalStorage() {
     if (!supportLocalStorage) {
         return false;
     }
@@ -1140,13 +1109,10 @@ function restoreOptions() {
     var fontSizeO = localStorage.getItem("fontSizeO");
     $("#font-output").val(fontSizeO);
     $('#output').css('font-size', fontSizeO + "px");
-
     var opt = localStorage.getItem("solverOptions");
     if (opt !== null) {
         var obj = JSON.parse(opt);
-        $('#inputLanguage').val(obj.language).change();
-        $('#inputengine').val(obj.engine).change();
-        setOptions(obj);
+        restoreOptions(obj);
         if (obj.hasOwnProperty('runAuto')) {
             $("#run-dot").prop('checked', true);
         }
@@ -1154,50 +1120,83 @@ function restoreOptions() {
 }
 
 /**
- * @param {JSON} - obj 
- * @description deletes all the options and add them to the DOM 
+ * @param {JSON} obj - Object containing the options settings
  */
-function setOptions(obj) {
-    $('.row-option').each(function (index) {
-        $(this).remove();
-    });
-    $(obj.option).each(function (indexInArray, item) { // create option's form
-        addOption(indexInArray, item.name);
-        var currentOption;
-        if (indexInArray !== 0) {
-            currentOption = $('.row-option').get(indexInArray);
-            $(currentOption).find('label').empty();
-        }
-        if (indexInArray < obj.option.length - 1) { //deletes all 'btn-add' except in the last option
-            currentOption = $('.row-option').get(indexInArray);
-            $(currentOption).find('.btn-add-option').empty();
-        }
-        if (item['value']) {
-            currentClass = $('.option-value').eq(indexInArray);
-            $(item.value).each(function (indexInArray, itemValue) {
-                if (indexInArray !== 0)
-                    addInpuValue(currentClass);
-                $('.input-group-value').last().find('.form-control-value').val(itemValue);
-                if (indexInArray < item.value.length - 1) { //deletes all 'btn-add' except the last in the input type value
-                    $('.input-group-value').last().find('.btn-add').parent().empty();
-                }
+function restoreOptions(obj) {
+    $('#inputLanguage option').each(function (index, language) {
+        if($(language).val() === obj.language) {
+            var deferLanguage = $.Deferred();
+            // Promise serves to wait all new solvers are loaded from the server
+            var promiseLanguage = deferLanguage.promise();
+            var languageChanged = (success) => { success ? deferLanguage.resolve() : deferLanguage.reject(); };
+            $('#inputLanguage option[value="' + obj.language + '"]').prop('selected', true).trigger('change', languageChanged);
+            $.when(promiseLanguage).done(function () {
+                $('#inputSolver option').each(function (index, solver) {
+                    if($(solver).val() === obj.solver) {
+                        var deferSolver = $.Deferred();
+                        // Promise serves to wait all new options are loaded from the server
+                        var promiseSolver = deferSolver.promise();
+                        var solverChanged = (success) => { success ? deferSolver.resolve() : deferSolver.reject(); };
+                        $('#inputSolver option[value="' + obj.solver + '"]').prop('selected', true).trigger('change', solverChanged);
+                        $.when(promiseSolver).done(function () {
+                            setOptions(obj);
+                        });
+                    }
+                });
             });
         }
-
     });
-    $('.row-option').each(function (index) { // add delete button after first option
-        if (index > 0) {
-            var cloneOpname = $(this).find('.opname');
-            $(cloneOpname).prepend('<span class="input-group-btn btn-del-option"><button type="button" class="btn btn-danger">-</button></span>');
+}
+
+/**
+ * @param {JSON} obj - Object containing the options settings
+ * @description deletes all the options and add them to the DOM
+ */
+function setOptions(obj) {
+    // TODO BUG: if "$('.row-option').eq(0)" did not exist there might be a problem
+    // Clone the first 'option' to use it as the template
+    var optionTemplate = $('.row-option').eq(0).clone();
+    $(obj.option).each(function (index, elem) {
+        // Check that 'obj' contains at least one valid and well formed option to load
+        if ($(optionTemplate).contents().find('option[value="' + elem.name + '"]').length > 0) {
+            setOptionsFromTemplate();
+            return false;
         }
     });
-
-    if (obj.engine === "clingo") {
-        $('.form-control-option').find('option').each(function (index, element) {
-            if ($(this).val() !== 'free choice' && $(this).val().length !== 0)
-                $(this).remove();
+    function setOptionsFromTemplate() {
+        $(optionTemplate).contents().find('.option-value').empty();
+        $('.row-option').each(function (index) {
+            $(this).remove();
         });
-
+        $(obj.option).each(function (indexInArray, item) { // create option's form
+            addOption(optionTemplate, indexInArray, item.name);
+            var currentOption;
+            if (indexInArray !== 0) {
+                currentOption = $('.row-option').get(indexInArray);
+                $(currentOption).find('label').empty();
+            }
+            if (indexInArray < obj.option.length - 1) { //deletes all 'btn-add' except in the last option
+                currentOption = $('.row-option').get(indexInArray);
+                $(currentOption).find('.btn-add-option').empty();
+            }
+            if (item['value']) {
+                currentClass = $('.option-value').eq(indexInArray);
+                $(item.value).each(function (indexInArray, itemValue) {
+                    if (indexInArray !== 0)
+                        addInputValue(currentClass);
+                    $('.input-group-value').last().find('.form-control-value').val(itemValue);
+                    if (indexInArray < item.value.length - 1) { //deletes all 'btn-add' except the last in the input type value
+                        $('.input-group-value').last().find('.btn-add').parent().empty();
+                    }
+                });
+            }
+        });
+        $('.row-option').each(function (index) { // add delete button after first option
+            if (index > 0) {
+                var cloneOpname = $(this).find('.opname');
+                $(cloneOpname).prepend('<span class="input-group-btn btn-del-option"><button type="button" class="btn btn-danger">-</button></span>');
+            }
+        });
     }
 }
 

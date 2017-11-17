@@ -1,0 +1,69 @@
+{
+    "languages": [
+        {
+            "name": "ASP",
+            "value": "asp",
+            "solvers": [
+                {
+                    "name": "Clingo",
+                    "value": "clingo",
+                    "executors": [
+                        {
+                            "protocol": "ws",
+                            "url": "localhost",
+                            "path": "/ASPServerExecutor/home",
+                            "port": 8080
+                        }
+                    ],
+                    "options": [
+                        {
+                            "name": "Free choise",
+                            "value": "free choise",
+							"word_argument": true,
+							"description": "Missing description"
+						}
+                    ]
+                }, {
+                    "name": "DLV",
+                    "value": "dlv",
+                    "executors":[
+                        {
+                            "protocol": "ws",
+                            "url": "localhost",
+                            "path": "/ASPServerExecutor/home",
+                            "port": 8080
+                        }
+                    ],
+                    "options": [
+                        {
+							"name": "Free choise",
+                            "value": "",
+							"word_argument": true,
+							"description": "Missing description"
+						}, {
+							"name": "Filter",
+							"value": "-filter=",
+							"word_argument": true,
+							"description": "Missing description"
+						}, {
+							"name": "No Facts",
+							"value": "-nofacts",
+							"word_argument": false,
+							"description": "Missing description"
+						}, {
+							"name": "Silent",
+							"value": "-silent",
+							"word_argument": false,
+							"description": "Missing description"
+						}, {
+							"name": "Query",
+							"value": "-FC",
+							"word_argument": false,
+							"description": "Missing description"
+						}
+                    ]
+                }
+            ]
+        }
+    ]
+}
