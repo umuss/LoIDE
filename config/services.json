@@ -4,7 +4,8 @@
         "name"      : "ASP",
         "value"     : "asp",
         "solvers"   : 
-        [{
+        [
+            {
             "name"      : "DLV2",
             "value"     : "dlv2",
             "executors" :
@@ -29,12 +30,12 @@
             "value"     : "clingo",
             "executors" : 
             [{
-                "protocol"  	: "ws",
-                "url"       	: "localhost",
+                "protocol"      : "ws",
+                "url"           : "localhost",
                 "name"          : "EmbASPServerExecutor",
                 "value"         : "embAspServerExecutor",
-                "path"      	: "/EmbASPServerExecutor/home",
-                "port"      	: 8080
+                "path"          : "/EmbASPServerExecutor/home",
+                "port"          : 8080
             }],
             "options"   : 
             [{
@@ -87,6 +88,47 @@
                 "word_argument" : false,
                 "description"   : "Missing description"
             }]
+        }]
+    },
+    {
+        "name"      : "PDDL",
+        "value"     : "pddl",
+        "solvers"   : 
+        [{
+            "name"      : "SPD",
+            "value"     : "spd",
+            "executors" :
+            [{
+                "protocol"      : "ws",
+                "url"           : "localhost",
+                "name"          : "PythonESE",
+                "value"         : "pythonEse",
+                "path"          : "/",
+                "port"          : 8765
+            },
+            {
+                "protocol"      : "ws",
+                "url"           : "localhost",
+                "name"          : "EmbASPServerExecutor",
+                "value"         : "embAspServerExecutor",
+                "path"          : "/EmbASPServerExecutor/home",
+                "port"          : 8080
+            }],
+            "options"   :       
+            [
+            {
+                "name"          : "Domain tab(s)",
+                "value"         : "domain_tabs",
+                "word_argument" : true,
+                "description"   : "Missing description"
+            },
+            {
+                "name"          : "Problem tab(s)",
+                "value"         : "problem_tabs",
+                "word_argument" : true,
+                "description"   : "Missing description"
+            }
+            ]
         }]
     }]
 }

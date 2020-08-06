@@ -137,9 +137,9 @@ var searchBoxOpened = false;
  * @description default screens sizes and activated status
  */
 var screen = {
-    small: { size: 576, isActive: false},
-    medium: { size: 768, isActive: false},
-    large: { size: 992, isActive: true}
+    small: { size: 576, isActive: false },
+    medium: { size: 768, isActive: false },
+    large: { size: 992, isActive: true }
 };
 
 /**
@@ -230,28 +230,28 @@ $(window).resize(function () {
     }
 });
 
-function setSizePanes(){
+function setSizePanes() {
     var outputPos = localStorage.getItem("outputPos");
     outputPos = outputPos !== null ? outputPos : "east";
 
-    if(screen.small.isActive){
-        if(outputPos == "east"){
+    if (screen.small.isActive) {
+        if (outputPos == "east") {
             layout.sizePane("east", 100);
         }
         else {
             layout.sizePane("south", 200);
         }
     }
-    else if(screen.medium.isActive){
-        if(outputPos == "east"){
+    else if (screen.medium.isActive) {
+        if (outputPos == "east") {
             layout.sizePane("east", 200);
         }
         else {
             layout.sizePane("south", 200);
         }
-    } 
+    }
     else {
-        if(outputPos == "east"){
+        if (outputPos == "east") {
             layout.sizePane("east", 250);
         }
         else {
@@ -429,19 +429,19 @@ $(document).ready(function () {
 
     setSizePanes();
 
-    setTimeout( ()=>{
+    setTimeout(() => {
         $('.splashscreen').addClass('display-none');
 
-    },500 )
+    }, 500)
 });
 
-function checkScreenType(){
-    if($(window).width() < screen.medium.size){
+function checkScreenType() {
+    if ($(window).width() < screen.medium.size) {
         screen.small.isActive = true;
         screen.medium.isActive = false;
         screen.large.isActive = false;
     }
-    else if($(window).width() < screen.large.size){
+    else if ($(window).width() < screen.large.size) {
         screen.small.isActive = false;
         screen.medium.isActive = true;
         screen.large.isActive = false;
@@ -453,7 +453,7 @@ function checkScreenType(){
     }
 }
 
-function inizializeAppareaceSettings(){
+function inizializeAppareaceSettings() {
 
     $('#font-output').change(function (e) {
         var size = $(this).val();
@@ -496,7 +496,7 @@ function inizializeAppareaceSettings(){
     }
 
     actualTheme = localStorage.getItem("theme") == null ? "" : localStorage.getItem("theme");
-    if( actualTheme.length == 0){
+    if (actualTheme.length == 0) {
         if (localStorage.getItem('mode') === 'dark')
             setThemeEditors(defaultDarkTheme);
         else {
@@ -547,14 +547,22 @@ function checkEmptyTabSelected() {
  * @description Serialize form and send it to socket server and waits for the response
  */
 function callSocketServer(onlyActiveTab) {
+
     $('.tab-pane').each(function (index, element) {
         var id = $(this).find('.ace').attr("id");
         editors[id].replaceAll("", { "needle": "'" });
     });
+
+    // onlyActiveTab is true only when "Current tab" is selected in "Choose tab to execute"
     if (onlyActiveTab || !addMorePrograms()) {
+        //alert("Current tab selezionata");
         var text = editors[idEditor].getValue();
-        $('#program').val(text); // insert the content of text editor in a hidden input text to serailize
+        //alert(editors[idEditor].getValue());
+        $('#program').val(text); // insert the content of text editor in a hidden input text to serialize
     }
+
+    
+    //alert("Program val: " + $("#program").val());
     var form = $('#input').serializeFormJSON();
     if (form.option == null) {
         form.option = [{ name: "" }];
@@ -573,11 +581,11 @@ function callSocketServer(onlyActiveTab) {
 
             var outputPos = localStorage.getItem("outputPos");
             outputPos = outputPos !== null ? outputPos : "east";
-            
-            if(outputPos == "east"){
+
+            if (outputPos == "east") {
                 layout.open("east");
             }
-            else{
+            else {
                 layout.open("south");
             }
 
@@ -1035,7 +1043,7 @@ $(document).on('click', '.add-tab', function () { // add new tab
     $("[data-target='#" + tabID + "']").trigger('click'); //active last tab inserted
 
     actualTheme = localStorage.getItem("theme") == null ? "" : localStorage.getItem("theme");
-    if(actualTheme.length == 0){
+    if (actualTheme.length == 0) {
         if (localStorage.getItem('mode') === 'dark')
             setThemeEditors(defaultDarkTheme);
         else {
@@ -1264,8 +1272,38 @@ function addInputValue(inputClass) {
      */
     var replaceName = currentName.replace('name', 'value');
     replaceName += '[]';
-    inputClass.closest('.row-option').find('.option-values').append('<div class="input-group"><input type="text" class="form-control form-control-value option-value" name=' + replaceName + '><span class="btn-del-value"><i class="fa fa-trash"></i></span></div>');
-    $(inputClass).siblings('.option-values').after('<button type="button" class="btn btn-light btn-add btn-block"> <i class="fa fa-plus"></i> Add value</button>');
+
+    // if (($('#inputLanguage').val()) == "pddl") 
+    // {
+        // var $inputGroupDiv = $("<div>", {"class": "input-group"});
+        // var $selectElement = $("<select>", {"class" : "form-control form-control-value option-value", "name" : replaceName});
+
+        // $("ul[role='tablist']").children().each(function () {
+        //     if ($(this).children(":first").hasClass("add-tab") == false) {
+        //         var e = $(this).children(":first").attr("data-target").replace("#tab", "editor");
+        //         var n = $(this).children(":first").children(":nth-child(2)").html();
+        //         $selectElement.append('<option value="' + e + '">' + n + '</option>');
+        //     }
+        // });
+
+        // $selectElement.on('change', function() {
+        //     alert($("#tab-execute-new").find('[value="' + this.value + '"'));
+        //     $("#tab-execute-new").find('[value="' + this.value + '"').addClass("checked");
+        //     $("#tab-execute-new").find('[value="' + this.value + '"').children().first().children().first().removeClass("invisible");
+        //     $(".check-auto-run-tab").removeClass("checked");
+        //     $(".check-auto-run-tab").children().first().children().first().addClass("invisible");
+        //   });
+        // $inputGroupDiv.append($selectElement);
+        // inputClass.closest('.row-option').find('.option-values').append($inputGroupDiv);
+    // }
+    // else {
+        inputClass.closest('.row-option').find('.option-values').append('<div class="input-group"><input type="text" class="form-control form-control-value option-value" name=' + replaceName + '><span class="btn-del-value"><i class="fa fa-trash"></i></span></div>');
+        $(inputClass).siblings('.option-values').after('<button type="button" class="btn btn-light btn-add btn-block"> <i class="fa fa-plus"></i> Add value</button>');
+    // }
+}
+
+function fillSelect(lastElement) {
+
 }
 
 /**
@@ -1523,7 +1561,7 @@ function setUpAce(ideditor, text) {
     editors[ideditor].jumpToMatching();
 
     actualTheme = localStorage.getItem("theme") == null ? "" : localStorage.getItem("theme");
-    if(actualTheme.length == 0){
+    if (actualTheme.length == 0) {
         if (localStorage.getItem('mode') === 'dark')
             editors[ideditor].setTheme(defaultDarkTheme);
         else {
@@ -1619,7 +1657,8 @@ function addMorePrograms() {
     $('.check-run-tab.checked:not(.check-auto-run-tab)').each(function (index, element) {
         check = true;
         var p = editors[$(this).val()].getValue();
-        $('.layout').prepend("<input type='hidden' name='program[" + index + "]' id='program" + $(this).val() + "' value='" + p + "' class='programs'>");
+        $('.layout').prepend("<input type='hidden' name='program[" + index + "][value]' id='program" + $(this).val() + "' value='" + p + "' class='programs'>");
+        $('.layout').prepend("<input type='hidden' name='program[" + index + "][name]' value='" + $(this).find(".check-tab-name").html() + "' class='programs'>");
     });
 
     if (check) {
@@ -1796,7 +1835,7 @@ function addTab(obj, text, name) {
     initializeCheckTabToRun();
     setAceMode();
     setElementsColorMode();
-    
+
     var currentFontSize = $('#font-editor').val();
     if (currentFontSize.length == 0) {
         editors[editorId].setFontSize(currentFontSize + "px");
@@ -1917,7 +1956,7 @@ function inizializePopovers() {
             downloadLoDIEProject();
 
             // TO MOVE ON OUTPUT DOWNLOAD
-            
+
             /* if($('#only-output').is(":checked")){
                 $('#program').removeAttr('name', 'program[0]');
                 $('#output-form').attr('name', 'output');
@@ -1930,11 +1969,11 @@ function inizializePopovers() {
                 $('#output-form').removeAttr('name', 'output');
              } */
         });
-        
-         /* $("#cloud-download").on('click', function () {
-           console.log('Save on cloud');
-         }); */
-         
+
+        /* $("#cloud-download").on('click', function () {
+          console.log('Save on cloud');
+        }); */
+
     });
 
     $('.popover-download').on('hidden.bs.popover', function () {
@@ -2046,7 +2085,7 @@ function inizializeToolbar() {
         editors[idEditor].focus();
     });
 
-    var clipboardSupport = typeof(navigator.clipboard)=='undefined' ? false : true;
+    var clipboardSupport = typeof (navigator.clipboard) == 'undefined' ? false : true;
 
     if (clipboardSupport) {
         $('#btn-paste').on('click', function () {
